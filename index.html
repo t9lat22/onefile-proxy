@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>proxy</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+}
+
+#topbar {
+  background: #111;
+  padding: 10px;
+}
+
+#url {
+  width: 75%;
+  padding: 8px;
+  font-size: 16px;
+}
+
+button {
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+iframe {
+  width: 100%;
+  height: 92vh;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="topbar">
+  <input id="url" placeholder="Enter site (example.com)">
+  <button onclick="go()">Go</button>
+</div>
+
+<iframe id="frame"></iframe>
+
+<script>
+const proxy = "https://api.allorigins.win/raw?url=";
+
+async function go() {
+  let url = document.getElementById("url").value.trim();
+
+  if (!url.startsWith("http")) {
+    url = "https://" + url;
+  }
+
+  try {
+    const res = await fetch(proxy + encodeURIComponent(url));
+    let html = await res.text();
+
+    const base = new URL(url).origin;
+
+    html = html.replace(/(href|src)=["']\/(.*?)["']/gi,
+      (m, attr, path) =>
+        `${attr}="${proxy}${base}/${path}"`
+    );
+
+    html = html.replace(/(href|src)=["']https?:\/\/(.*?)["']/gi,
+      (m, attr, link) =>
+        `${attr}="${proxy}https://${link}"`
+    );
+
+    const blob = new Blob([html], { type: "text/html" });
+    const blobURL = URL.createObjectURL(blob);
+
+    document.getElementById("frame").src = blobURL;
+
+  } catch (err) {
+    alert("Proxy failed: " + err);
+  }
+}
+</script>
+<script src=""></script>
+
+</body>
+</html>
